@@ -1,0 +1,207 @@
+:root {
+	--btzc-v2-frontend-default-border-radius: 2px;
+
+	--btzc-v2-frontend-table-bg: #ccc;
+	--btzc-v2-frontend-table-color: #1a1a1a;
+	--btzc-v2-frontend-table-title-bg: #b3b3b3;
+	--btzc-v2-frontend-table-title-color: #b3b3b3;
+	--btzc-v2-frontend-table-element-bg: #e6e6e6;
+	--btzc-v2-frontend-table-highlight-bg: #5568ad;
+	--btzc-v2-frontend-table-highlight-color: #f9f9f9;
+}
+
+
+
+
+#btzc-el-frontend-container {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+}
+
+#btzc-el-frontend-employee-list {
+	width: 650px;
+}
+
+#btzc-el-frontend-employee-list-head {
+	display: flex;
+	flex-direction: row;
+	justify-content: space-between;
+	flex-wrap: wrap;
+	align-items: center;
+	padding: 10px;
+	width: inherit;
+	min-width: fit-content;
+	border-radius: var(--btzc-v2-frontend-default-border-radius);
+	background-color: var( --btzc-v2-frontend-table-title-bg );
+	select {
+		border-radius: var(--btzc-v2-frontend-default-border-radius);
+		padding: 5px 10px;
+		margin: 5px;
+		width: calc(50% - 15px);
+	}
+	#btzc-el-frontend-search-field {
+		border-radius: var(--btzc-v2-frontend-default-border-radius);
+		padding: 5px 10px;
+		margin: 5px;
+		width: 100%
+	}
+	#btzc-el-frontend-search-field-reduced {
+		border-radius: var(--btzc-v2-frontend-default-border-radius);
+		padding: 5px 10px;
+		margin: 5px;
+		width: calc(50% - 15px);
+	}
+}
+
+#btzc-el-frontend-employee-list-body {
+	width: inherit;
+}
+
+
+/************************************************
+*                                               *
+*                 employee tile                 *
+*                                               *
+************************************************/
+
+.btzc-el-frontend-employee-tile {
+	display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    margin: 15px 0;
+    background-color: var(--btzc-v2-frontend-table-element-bg);
+	color: var(--btzc-v2-frontend-table-color);
+	border-radius: var(--btzc-v2-frontend-default-border-radius);
+	width: inherit;
+	min-width: fit-content;
+	height: fit-content;
+}
+
+.btzc-el-frontend-employee-tile-header {}
+
+.btzc-el-frontend-employee-tile-body {
+	display: flex;
+	flex-direction: row;
+	justify-content: flex-start;
+	align-content: center;
+	width: 100%;
+	flex-wrap: nowrap;
+}
+
+.btzc-el-frontend-employee-tile-footer {
+	display: flex;
+	flex-direction: row;
+	justify-content: flex-start;
+	align-items: center;
+	width: 100%;
+}
+
+
+
+.btzc-el-frontend-employee-tile-body-image-container {
+	display: flex;
+	flex-direction: column;
+	place-content: center;
+	align-self: center;
+	width: fit-content;
+	height: 100%;
+	margin: 5px 25px 5px 10px;
+	img {
+		height: 200px;
+		max-width: 200px;
+		border-radius: 50%;
+		object-fit: contain;
+	}
+}
+
+.btzc-el-frontend-employee-tile-body-data-container {
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: flex-start;
+	width: 100%;
+	padding: 0 15px;
+}
+
+.btzc-el-frontend-employee-tile-name-row {
+	display: flex;
+	flex-direction: row;
+	justify-content: flex-start;
+	align-items: center;
+	width: 100%;
+	p {
+		font-size: 1.3em;
+		white-space: nowrap;
+	}
+	p:nth-child(1) {
+		font-weight: normal;
+	}
+	p:nth-child(2) {
+		font-weight: bold;
+	}
+}
+
+.btzc-el-frontend-employee-tile-departments-section {
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: flex-start;
+	width: 100%;
+	p {
+		font-weight: bold;
+		font-size: 0.9em;
+		line-height: 0;
+	}
+}
+
+.btzc-el-frontend-employee-tile-occupations-section {
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: flex-start;
+	width: 100%;
+	p {
+		font-weight: normal;
+		font-size: 0.9em;
+		line-height: 0;
+	}
+}
+
+.btzc-el-frontend-employee-tile-phone-and-room-row {
+	display: flex;
+	flex-direction: row;
+	justify-content: space-between;
+	align-items: center;
+	width: 100%;
+	p {
+		font-size: 0.9em;
+	}
+	p:nth-child(1) {
+		width: 65%;
+	}
+	p:nth-child(2) {
+		width: 35%;
+	}
+	p:nth-child(n+3) {
+		width: 0;
+	}
+
+}
+
+
+.btzc-el-frontend-additional-information {
+	display: flex;
+	flex-direction: row;
+	justify-content: center;
+	align-items: center;
+	margin: 10px 0 0 0;
+	border-radius: var(--btzc-v2-frontend-default-border-radius);
+	background-color: var(--btzc-v2-frontend-table-highlight-bg);
+	color: var(--btzc-v2-frontend-table-highlight-color);
+	width: 100%;
+}
+
