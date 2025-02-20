@@ -11,7 +11,7 @@
  * @wordpress-plugin
  * Plugin Name: BTZ Customized - Employee List
  * Description: A search- and filter list for the employees of BTZ Cologne
- * Version:     2.0.1
+ * Version:     2.0.2
  * Author:      M. Großhäuser
  * Author URI:  https://www.github.com/grosshaeuser
  * License:     GPL v2 or later

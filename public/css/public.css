@@ -41,13 +41,13 @@
 		margin: 5px;
 		width: calc(50% - 15px);
 	}
-	#btzc-el-frontend-search-field {
+	.btzc-el-frontend-search-field {
 		border-radius: var(--btzc-v2-frontend-default-border-radius);
 		padding: 5px 10px;
 		margin: 5px;
 		width: 100%
 	}
-	#btzc-el-frontend-search-field-reduced {
+	.btzc-el-frontend-search-field-reduced {
 		border-radius: var(--btzc-v2-frontend-default-border-radius);
 		padding: 5px 10px;
 		margin: 5px;

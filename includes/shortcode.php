@@ -17,7 +17,7 @@ defined('ABSPATH') or die('Unauthorized!');
 function translate($key) {
 	$locale = get_locale() ?: 'en_US';
 	$frontEndBaseDir = str_replace('includes', 'language', __DIR__);
-	$lang_file = $frontEndBaseDir . "/{$locale}.json";
+	$lang_file = $frontEndBaseDir . "/$locale.json";
 
 	if (!file_exists($lang_file)) {
 		$lang_file = $lang_file . "/en_US.json";
@@ -47,7 +47,7 @@ add_shortcode( 'employee_list', 'BTZ\Customized\EmployeeList\shortcode' );
  */
 function shortcode($attributes) {
 	if ( \Elementor\Plugin::$instance->editor->is_edit_mode() ) {
-		return 'Employee-List wont render correctly in Elementor Edit Mode. Please switch to Preview Mode to see the Plugin in Action.';
+		return 'Employee-List won\'t render correctly in Elementor Edit Mode. Please switch to Preview Mode to see the Plugin in Action.';
 	}
 
 	if (defined('BTZC_EL_BASE_URL')) {
@@ -60,8 +60,9 @@ function shortcode($attributes) {
 	$department_id = intval($attributes['department']);
 	$occupation_id = intval($attributes['occupation']);
 
-    $departments = Department::get_all();
-	$occupations = Occupation::get_all();
+	$departments = $department_id == 0 ? Department::get_all() : Department::get_by_id($department_id);
+	$occupations = $occupation_id == 0 ? Occupation::get_all() : Occupation::get_by_id($occupation_id);
+
 	if ($department_id > 0) {
 		$employees = Employee::get_by_department_id( $department_id );
 	} else if ($occupation_id > 0) {
@@ -73,16 +74,13 @@ function shortcode($attributes) {
 	$output  = '<div id="btzc-el-frontend-container">';
 	$output .= '  <div id="btzc-el-frontend-employee-list">';
 	$output .= '    <div id="btzc-el-frontend-employee-list-head">';
-	if ($department_id == 0) {
-		$output .=        get_department_selection_element($departments);
-	}
-	if ($occupation_id == 0) {
-		$output .=        get_occupation_selection_element($occupations);
-	}
+	$output .= $department_id == 0 ? get_department_selection_element($departments) : get_department_selection_element($departments, false);
+	$output .= $occupation_id == 0 ? get_occupation_selection_element($occupations) : get_occupation_selection_element($occupations, false);
+
 	if ($department_id == 0 && $occupation_id == 0) {
-		$output .= '      <input id="btzc-el-frontend-search-field" type="text" placeholder=' . translate('search_placeholder'). '>';
+		$output .= '      <input id="btzc-el-frontend-search-field" class="btzc-el-frontend-search-field" type="text" placeholder=' . translate('search_placeholder'). '>';
 	} else {
-		$output .= '      <input id="btzc-el-frontend-search-field-reduced" type="text" placeholder=' . translate('search_placeholder'). '>';
+		$output .= '      <input id="btzc-el-frontend-search-field" class="btzc-el-frontend-search-field-reduced" type="text" placeholder=' . translate('search_placeholder'). '>';
 	}
 	$output .= '    </div>';
 	$output .= '    <div id="btzc-el-frontend-employee-list-body">';
@@ -105,8 +103,12 @@ function shortcode($attributes) {
  *
  * @since 1.0.0
  */
-function get_department_selection_element($departments) {
-	$output  = '<select id="btzc-el-frontend-department-select">';
+function get_department_selection_element($departments, $visible = true) {
+	if ($visible) {
+		$output  = '<select id="btzc-el-frontend-department-select">';
+	} else {
+		$output  = '<select id="btzc-el-frontend-department-select" hidden>';
+	}
 	$output .= '  <option value="0">' . translate('all_departments') . '</option>';
 	foreach ($departments as $department) {
 		$output .= '  <option value="' . $department->get_id() . '">' . $department->get_department() . '</option>';
@@ -125,8 +127,12 @@ function get_department_selection_element($departments) {
  *
  * @since 1.0.0
  */
-function get_occupation_selection_element($occupations) {
-	$output  = '<select id="btzc-el-frontend-occupation-select">';
+function get_occupation_selection_element($occupations, $visible = true) {
+	if ($visible) {
+		$output  = '<select id="btzc-el-frontend-occupation-select">';
+	} else {
+		$output  = '<select id="btzc-el-frontend-occupation-select" hidden>';
+	}
 	$output .= '  <option value="0">' . translate('all_occupations') . '</option>';
 	foreach ($occupations as $occupation) {
 		$output .= '  <option value="' . $occupation->get_id() . '">' . $occupation->get_occupation() . '</option>';

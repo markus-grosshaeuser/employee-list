@@ -222,8 +222,24 @@ export const backendDictionary = {
         en_US: 'Upload images',
         de_DE: 'Bilder hochladen'
     },
+    'Shortcode selection': {
+        en_US: 'Shortcode selection',
+        de_DE: 'Shortcode Auswahl'
+    },
     'Shortcode copied to clipboard': {
         en_US: 'Shortcode copied to clipboard',
         de_DE: 'Shortcode in Zwischenablage kopiert'
+    },
+    'Unable to copy shortcode to clipboard': {
+        en_US: 'Unable to copy shortcode to clipboard. Please insert to folowing shortcode manually to your page:',
+        de_DE: 'Shortcode kann nicht in die Zwischenablage kopiert werden. Bitte fügen Sie den folgenden Shortcode manuell auf Ihrer Seite ein:'
+    },
+    'No limitations': {
+        en_US: 'No limitations',
+        de_DE: 'Keine Einschränkungen'
+    },
+    'Limit to department': {
+        en_US: 'Limit to department',
+        de_DE: 'Auf Bereich beschränken'
     }
 };
