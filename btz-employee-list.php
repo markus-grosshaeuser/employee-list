@@ -11,9 +11,9 @@
  * @wordpress-plugin
  * Plugin Name: BTZ Customized - Employee List
  * Description: A search- and filter list for the employees of BTZ Cologne
- * Version:     2.0.2
+ * Version:     2.1.0
  * Author:      M. Großhäuser
- * Author URI:  https://www.github.com/grosshaeuser
+ * Author URI:  https://www.github.com/markus-grosshaeuser
  * License:     GPL v2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  */
@@ -129,6 +129,11 @@ require_once BTZC_EL_INCLUDES . 'class-occupations-tab.php';
  * Shortcode to include the employee-list anywhere on the site where a shortcode can be inserted.
  */
 require_once BTZC_EL_INCLUDES . 'shortcode.php';
+
+/**
+ * Shortcode for a self-service-form
+ */
+require_once BTZC_EL_INCLUDES . 'self-service-form.php';
 
 
 
