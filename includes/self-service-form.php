@@ -11,23 +11,21 @@ function self_service_form() {
 	}
 
     defined ('BTZC_EL_BASE_URL') or die ('');
-
     wp_enqueue_style('btz_customized_employee_list_frontend_stylesheet', BTZC_EL_BASE_URL . 'public/css/public.css');
     wp_enqueue_script('btz_employee_list_jquery', BTZC_EL_BASE_URL . 'public/js/jquery-3.7.1.min.js');
+	wp_enqueue_script('btz_customized_employee_list_ssf_sign_on', BTZC_EL_BASE_URL . 'public/js/employee-ssf.js');
 
     if ($_GET['init_id'] == '99') {
-        wp_enqueue_script('btz_customized_employee_list_ssf_sign_on', BTZC_EL_BASE_URL . 'public/js/ssf-sign-on.js');
-        return get_sign_on_form_html();
+        return get_self_service_form_html();
     }
 
-    wp_enqueue_script('btz_customized_employee_list_ssf_edit_data', BTZC_EL_BASE_URL . 'public/js/ssf-edit-data.js');
 
     if (isset($_POST['btzc-el-edit-data-username']) && isset($_POST['btzc-el-edit-data-pin'])) {
         $employees = Employee::get_all();
         foreach ($employees as $employee) {
-            $username = explode($employee->get_email(), "@")[0];
+            $username = explode("@", $employee->get_email_address())[0];
             if ($username == $_POST['btzc-el-edit-data-username']) {
-                return get_edit_data_form_html();
+	            return get_self_service_form_html($employee);
             }
         }
     }
@@ -35,90 +33,107 @@ function self_service_form() {
     return get_edit_data_log_in_html();
 }
 
-function get_sign_on_form_html() {
-    $html  = '<div id="btzc-el-sign-on-form-container">';
-    $html .= '<div id="btzc-el-sign-on-form-main">';
-    $html .= '    <div id ="btzc-el-sign-on-name-row">';
-    $html .= '        <input type="text" id="btzc-el-sign-on-firstname" placeholder="Vorame" />';
-    $html .= '        <input type="text" id="btzc-el-sign-on-lastname" placeholder="Nachname" />';
+function get_self_service_form_html($employee = null) {
+    $html  = '<div id="btzc-el-self-service-form-container">';
+    $html .= '<div id="btzc-el-self-service-form-main">';
+    $html .= '    <div id ="btzc-el-self-service-name-row">';
+    $html .= '        <input type="text" class="btzc-el-ssf-textfield" id="btzc-el-self-service-firstname" placeholder="Vorname" value="' . ($employee != null ? $employee->get_first_name() : '') . '" />';
+    $html .= '        <input type="text" class="btzc-el-ssf-textfield" id="btzc-el-self-service-lastname" placeholder="Nachname" value="'. ($employee != null ? $employee->get_last_name() : '') .'" />';
     $html .= '    </div>';
-    $html .= '    <div id = "btzc-el-sign-on-gender-row">';
-    $html .= '        <label for="btzc-el-sign-on-gender-selection">Geschlecht</label>';
-    $html .= '        <select id="btzc-el-sign-on-gender-selection">';
+    $html .= '    <div id = "btzc-el-self-service-gender-row">';
+    $html .= '        <label for="btzc-el-self-service-gender-selection">Geschlecht</label>';
+    $html .= '        <select id="btzc-el-self-service-gender-selection">';
     $html .= '            <option value="undefined">Keine Auswahl</option>';
-    $html .= '            <option value="male">männlich</option>';
-    $html .= '            <option value="female">weiblich</option>';
-    $html .= '            <option value="diverse">divers</option>';
+    $html .= '            <option value="male" ' . ($employee != null && $employee->get_gender() == 'male' ? 'selected="selected"' : '') . '">männlich</option>';
+    $html .= '            <option value="female" ' . ($employee != null && $employee->get_gender() == 'female' ? 'selected="selected"' : '') .' >weiblich</option>';
+    $html .= '            <option value="diverse" ' . ($employee != null && $employee->get_gender() == 'diverse' ? 'selected="selected"' : '') . '>divers</option>';
     $html .= '        </select>';
     $html .= '    </div>';
-    $html .= '    <div id = "btzc-el-sign-on-department-container">';
-    $html .= '        <div id = "btzc-el-sign-on-department-label-container">';
-    $html .= '            <label for="btzc-el-sign-on-department-selection">Bereich(e)</label>';
+    $html .= '    <div id = "btzc-el-self-service-department-container">';
+    $html .= '        <div id = "btzc-el-self-service-department-label-container">';
+    $html .= '            <label for="btzc-el-self-service-department-selection">Bereich(e)</label>';
     $html .= '        </div>';
-    $html .= '        <div id = "btzc-el-sign-on-department-selection-container">';
-    $html .=            getDepartmentSelectElement();
-    $html .= '        </div>';
-    $html .= '    </div>';
-    $html .= '    <div id = "btzc-el-sign-on-occupation-container">';
-    $html .= '        <div id = "btzc-el-sign-on-occupation-label-container">';
-    $html .= '            <label for="btzc-el-sign-on-occupation-selection">Position(en)</label>';
-    $html .= '        </div>';
-    $html .= '        <div id = "btzc-el-sign-on-occupation-selection-container">';
-    $html .=            getOccupationSelectElement();
+    $html .= '        <div id = "btzc-el-self-service-department-selection-container">';
+    $html .=            $employee != null ? getDepartmentSelectElement($employee->get_departments()->get_departments()) : getDepartmentSelectElement();
     $html .= '        </div>';
     $html .= '    </div>';
-    $html .= '    <div id = "btzc-el-sign-on-phone-and-room-row">';
-    $html .= '        <div id = "btzc-el-sign-on-phone-container">';
-    $html .= '            <label for="btzc-el-sign-on-phone-number">Telefonnummer</label>';
-    $html .= '            <input type="text" id="btzc-el-sign-on-phone-number" placeholder="Telefonnummer" />';
+    $html .= '    <div id = "btzc-el-self-service-occupation-container">';
+    $html .= '        <div id = "btzc-el-self-service-occupation-label-container">';
+    $html .= '            <label for="btzc-el-self-service-occupation-selection">Position(en)</label>';
     $html .= '        </div>';
-    $html .= '        <div id = "btzc-el-sign-on-room-container">';
-    $html .= '            <label for="btzc-el-sign-on-room-number">Raumnummer</label>';
-    $html .= '            <input type="text" id="btzc-el-sign-on-room-number" placeholder="Raumnummer" />';
+    $html .= '        <div id = "btzc-el-self-service-occupation-selection-container">';
+    $html .=            $employee != null ? getOccupationSelectElement($employee->get_occupations()->get_occupations()) : getOccupationSelectElement();
     $html .= '        </div>';
     $html .= '    </div>';
-    $html .= '    <div id = "btzc-el-sign-on-email-row">';
-    $html .= '        <label for="btzc-el-sign-on-email-address">E-Mail-Adresse</label>';
-    $html .= '        <input type="text" id="btzc-el-sign-on-email-address" placeholder="E-Mail-Adresse" />';
+    $html .= '    <div id = "btzc-el-self-service-phone-and-room-row">';
+    $html .= '        <div id = "btzc-el-self-service-phone-container">';
+    $html .= '            <label for="btzc-el-self-service-phone-number" hidden>Telefonnummer</label>';
+    $html .= '            <input type="text" class="btzc-el-ssf-textfield" id="btzc-el-self-service-phone-number" placeholder="Telefonnummer" value="' . ($employee != null ? $employee->get_phone_number() : '') . '" />';
+    $html .= '        </div>';
+    $html .= '        <div id = "btzc-el-self-service-room-container">';
+    $html .= '            <label for="btzc-el-self-service-room-number" hidden>Raumnummer</label>';
+    $html .= '            <input type="text" class="btzc-el-ssf-textfield" id="btzc-el-self-service-room-number" placeholder="Raumnummer" value="' . ($employee != null ? $employee->get_room_number() : '') . '" />';
+    $html .= '        </div>';
     $html .= '    </div>';
-    $html .= '    <div id = "btzc-el-sign-on-info-row">';
-    $html .= '        <label for="btzc-el-sign-on-info">Info:</label>';
-    $html .= '        <input type="text" id="btzc-el-sign-on-info" placeholder="Vorsicht, wenn ich noch keinen Kaffee hatte!" />';
+    $html .= '    <div id = "btzc-el-self-service-email-row">';
+    $html .= '        <label for="btzc-el-self-service-email-address" hidden>E-Mail-Adresse</label>';
+    $html .= '        <input type="text" class="btzc-el-ssf-textfield" id="btzc-el-self-service-email-address" placeholder="E-Mail-Adresse" value="' . ($employee != null ? $employee->get_email_address() : '') .'" />';
+    $html .= '    </div>';
+    $html .= '    <div id = "btzc-el-self-service-info-row">';
+    $html .= '        <label for="btzc-el-self-service-info">Zusätzliche Informationen:</label>';
+    $html .= '        <input type="text" class="btzc-el-ssf-textfield" id="btzc-el-self-service-info" placeholder="Vorsicht, wenn ich noch keinen Kaffee hatte! o.ä.  ;-)" value="' . ($employee != null ? $employee->get_information() : '') . '" />';
     $html .= '    </div>';
     $html .= '</div>';
-    $html .= '<div id="btzc-el-sign-on-form-secondary">';
-    $html .= '    <div id = "btzc-el-sign-on-image-container">';
-    $html .= '        <img id="btzc-el-sign-on-form-image" src="' . BTZC_EL_BASE_URL . 'public/images/profile_placeholder.png" alt="Bild" />';
-    $html .= '        <input type="file" id="btzc-el-sign-on-form-image-file" accept="image/*" hidden="hidden" />';
+    $html .= '<div id="btzc-el-self-service-form-secondary">';
+    $html .= '    <div id = "btzc-el-self-service-image-container">';
+    $html .= '        <img id="btzc-el-self-service-form-image" src="' . ($employee != null ? $employee->get_image_url() : BTZC_EL_BASE_URL . "public/images/profile_placeholder.png") . '" alt="Bild" />';
+    $html .= '        <input type="file" id="btzc-el-self-service-form-image-file" accept="image/*" hidden="hidden" />';
     $html .= '    </div>';
-    $html .= '    <div id = "btzc-el-sign-on-controls-container">';
-    $html .= '        <input type="button" id="btzc-el-sign-on-button-save" value="Speichern" />';
+    $html .= '    <div id = "btzc-el-self-service-controls-container">';
+    $html .= '        <input type="button" class="btzc-v2-basic-button btzc-v2-standard-button" id="btzc-el-self-service-button-fileupload" value="Bild hochladen" />';
+	$html .= '        <input type="button" class="btzc-v2-basic-button btzc-v2-standard-button" id="btzc-el-self-service-button-template" value="Platzhalter wählen" />';
     $html .= '    </div>';
     $html .= '</div>';
     $html .= '</div>';
+	$html .= '<div id="btzc-el-self-service-wordpress-account-container">';
+	$html .= '	<div id="btzc-el-self-service-wordpress-account-request-container">';
+	$html .= '		<input type="checkbox" id="btzc-el-self-service-wordpress-account-checkbox" />';
+	$html .= '		<label for="btzc-el-self-service-wordpress-account-checkbox">Ja, ich möchte Zugangsdaten für das BTZ-Wiki um eigenen Beiträge veröffentlichen zu können.</label>';
+	$html .= '	</div>';
+	$html .= '	<div id="btzc-el-self-service-wordpress-account-data-container">';
+	$html .= '        <input type="text" id="btzc-el-self-service-username" readonly placeholder="Benutzername" value="' . ($employee != null ? explode("@", $employee->get_email_address())[0] : '') . '" />';
+	$html .= '        <input type="password" id="btzc-el-self-service-password" placeholder="Passwort" />';
+	$html .= '	</div>';
+	$html .= '</div>';
+	$html .= '<div id="btzc-el-self-service-form-submit-container">';
+	$html .= '	<input type="button" class="btzc-v2-basic-button btzc-v2-standard-button" id="btzc-el-self-service-button-submit" value="Daten speichern" />';
+	$html .= '</div>';
     return $html;
 }
+
+
 
 function get_edit_data_log_in_html() {
-    $html  = '<div id="btzc-el-edit-data-form-login">';
-    $html .= '    <form method="POST">';
-    $html .= '        <input type="text" name="btzc-el-edit-data-username" id="btzc-el-edit-data-username" placeholder="Benutzername" />';
+	$html  = '<form method="POST">';
+	$html .= '	<div id="btzc-el-edit-data-form-login-container">';
+	$html .= '  <div id="btzc-el-edit-data-form-login-elements">';
+    $html .= '        <input type="text" name="btzc-el-edit-data-username" id="btzc-el-edit-data-username" placeholder="Benutzername oder E-Mail" />';
     $html .= '        <input type="password" name="btzc-el-edit-data-pin" id="btzc-el-edit-data-pin" placeholder="PIN" />';
-    $html .= '        <input type="submit" id="btzc-el-edit-data-button-login" value="Anmelden" />';
-    $html .= '    </form>';
-    $html .= '</div>';
-    return $html;
+    $html .= '        <input type="submit" class="btzc-v2-basic-button btzc-v2-standard-button" id="btzc-el-edit-data-button-login" value="Anmelden" />';
+	$html .= '        <div class="invalid-feedback" id="btzc-el-edit-data-info-no-username" hidden>Bitte geben Sie Ihren<br>Benutzernamen ein!</div>';
+	$html .= '        <a href="javascript:void(0);" id="btzc-el-edit-data-button-forgot-pin">Neuen Pin per E-Mail erhalten.</a>';
+	$html .= '	</div>';
+	$html .= '	</div>';
+	$html .= '</form>';
+	return $html;
 }
 
-function get_edit_data_form_html() {
-    return 'Test';
-}
 
 function getDepartmentSelectElement($selected = Array()) {
     $departments = Department::get_all();
     $html = '';
     if (count($selected) == 0) {
-        $html .= '<select class="btzc-el-sign-on-department-selection-element">';
+        $html .= '<select class="btzc-el-self-service-department-selection-element">';
         $html .= '    <option value="undefined">...</option>';
         foreach ($departments as $department) {
             $html .= '    <option value="' . $department->get_id() . '">' . $department->get_department() . '</option>';
@@ -126,17 +141,23 @@ function getDepartmentSelectElement($selected = Array()) {
         $html .= '</select>';
     } else {
         foreach ($selected as $selection) {
-            $html .= '<select class="btzc-el-sign-on-department-selection-element">';
+            $html .= '<select class="btzc-el-self-service-department-selection-element">';
             $html .= '    <option value="undefined">...</option>';
             foreach ($departments as $department) {
-                if ($department->get_id() == $selection) {
-                    $html .= '    <option selected value="' . $department->get_id() . '">' . $department->get_department() . '</option>';
+                if ($department->get_id() == $selection->get_id()) {
+                    $html .= '    <option selected="selected" value="' . $department->get_id() . '">' . $department->get_department() . '</option>';
                 } else {
                     $html .= '    <option value="' . $department->get_id() . '">' . $department->get_department() . '</option>';
                 }
             }
             $html .= '</select>';
         }
+	    $html .= '<select class="btzc-el-self-service-department-selection-element">';
+	    $html .= '    <option value="undefined">...</option>';
+	    foreach ($departments as $department) {
+		    $html .= '    <option value="' . $department->get_id() . '">' . $department->get_department() . '</option>';
+	    }
+	    $html .= '</select>';
     }
     return $html;
 }
@@ -146,7 +167,7 @@ function getOccupationSelectElement($selected = Array()) {
     $occupations = Occupation::get_all();
     $html = '';
     if (count($selected) == 0) {
-        $html .= '<select class="btzc-el-sign-on-occupation-selection-element">';
+        $html .= '<select class="btzc-el-self-service-occupation-selection-element">';
         $html .= '    <option value="undefined">...</option>';
         foreach ($occupations as $occupation) {
             $html .= '    <option value="' . $occupation->get_id() . '">' . $occupation->get_occupation() . '</option>';
@@ -154,10 +175,10 @@ function getOccupationSelectElement($selected = Array()) {
         $html .= '</select>';
     } else {
         foreach ($selected as $selection) {
-            $html .= '<select class="btzc-el-sign-on-occupation-selection-element">';
+            $html .= '<select class="btzc-el-self-service-occupation-selection-element">';
             $html .= '    <option value="undefined">...</option>';
             foreach ($occupations as $occupation) {
-                if ($occupation->get_id() == $selection) {
+                if ($occupation->get_id() == $selection->get_id()) {
                     $html .= '    <option selected value="' . $occupation->get_id() . '">' . $occupation->get_occupation() . '</option>';
                 } else {
                     $html .= '    <option value="' . $occupation->get_id() . '">' . $occupation->get_occupation() . '</option>';
@@ -165,6 +186,12 @@ function getOccupationSelectElement($selected = Array()) {
             }
             $html .= '</select>';
         }
+	    $html .= '<select class="btzc-el-self-service-occupation-selection-element">';
+	    $html .= '    <option value="undefined">...</option>';
+	    foreach ($occupations as $occupation) {
+		    $html .= '    <option value="' . $occupation->get_id() . '">' . $occupation->get_occupation() . '</option>';
+	    }
+	    $html .= '</select>';
     }
     return $html;
 }
