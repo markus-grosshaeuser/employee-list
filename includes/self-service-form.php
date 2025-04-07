@@ -19,16 +19,37 @@ function self_service_form() {
         return get_self_service_form_html();
     }
 
+	$employees = Employee::get_all();
 
     if (isset($_POST['btzc-el-edit-data-username']) && isset($_POST['btzc-el-edit-data-pin'])) {
-        $employees = Employee::get_all();
+		$raw_username = sanitize_text_field($_POST['btzc-el-edit-data-username']);
+		$username_from_post = explode("@", $raw_username)[0];
+		$pin_from_post = sanitize_text_field($_POST['btzc-el-edit-data-pin']);
         foreach ($employees as $employee) {
-            $username = explode("@", $employee->get_email_address())[0];
-            if ($username == $_POST['btzc-el-edit-data-username']) {
-	            return get_self_service_form_html($employee);
+			$username_from_db = explode("@", $employee->get_email_address())[0];
+	        if ($username_from_db == $username_from_post) {
+		        $pin_from_db = $employee->get_ssf_pin_hash();
+		        if ($pin_from_db != null && password_verify($pin_from_post, $pin_from_db)) {
+					return get_self_service_form_html( $employee );
+				}
             }
         }
+		return get_edit_data_log_in_html(true);
     }
+
+	if (isset($_POST['btzc-el-reset-pin-username'])) {
+		$raw_username = sanitize_text_field($_POST['btzc-el-reset-pin-username']);
+		$username_from_post = explode("@", $raw_username)[0];
+		foreach ($employees as $employee) {
+			$username_from_db = explode("@", $employee->get_email_address())[0];
+			if ($username_from_db == $username_from_post) {
+				$pin = $employee->generate_new_ssf_pin();
+				//TODO IMPORTANT send e-mail and remove echo-statement!!!!
+				echo "<script>alert('Ihr neuer Pin lautet: " . $pin . "');</script>";
+			}
+		}
+	}
+
 
     return get_edit_data_log_in_html();
 }
@@ -37,6 +58,7 @@ function get_self_service_form_html($employee = null) {
     $html  = '<div id="btzc-el-self-service-form-container">';
     $html .= '<div id="btzc-el-self-service-form-main">';
     $html .= '    <div id ="btzc-el-self-service-name-row">';
+	$html .= '        <input type="hidden" class="btzc-el-ssf-textfield" id="btzc-el-self-service-employee-id" value="' . ($employee != null ? $employee->get_id() : '') . '" />';
     $html .= '        <input type="text" class="btzc-el-ssf-textfield" id="btzc-el-self-service-firstname" placeholder="Vorname" value="' . ($employee != null ? $employee->get_first_name() : '') . '" />';
     $html .= '        <input type="text" class="btzc-el-ssf-textfield" id="btzc-el-self-service-lastname" placeholder="Nachname" value="'. ($employee != null ? $employee->get_last_name() : '') .'" />';
     $html .= '    </div>';
@@ -86,7 +108,7 @@ function get_self_service_form_html($employee = null) {
     $html .= '</div>';
     $html .= '<div id="btzc-el-self-service-form-secondary">';
     $html .= '    <div id = "btzc-el-self-service-image-container">';
-    $html .= '        <img id="btzc-el-self-service-form-image" src="' . ($employee != null ? $employee->get_image_url() : BTZC_EL_BASE_URL . "public/images/profile_placeholder.png") . '" alt="Bild" />';
+    $html .= '        <img id="btzc-el-self-service-form-image" src="' . ($employee != null ? $employee->get_image_url() : BTZC_EL_BASE_URL . "public/images/profile_placeholder.png") . '" alt="Bild" data-default="' . BTZC_EL_BASE_URL . "public/images/profile_placeholder.png" . '" />';
     $html .= '        <input type="file" id="btzc-el-self-service-form-image-file" accept="image/*" hidden="hidden" />';
     $html .= '    </div>';
     $html .= '    <div id = "btzc-el-self-service-controls-container">';
@@ -113,12 +135,12 @@ function get_self_service_form_html($employee = null) {
 
 
 
-function get_edit_data_log_in_html() {
+function get_edit_data_log_in_html($invalid = false) {
 	$html  = '<form method="POST">';
 	$html .= '	<div id="btzc-el-edit-data-form-login-container">';
 	$html .= '  <div id="btzc-el-edit-data-form-login-elements">';
-    $html .= '        <input type="text" name="btzc-el-edit-data-username" id="btzc-el-edit-data-username" placeholder="Benutzername oder E-Mail" />';
-    $html .= '        <input type="password" name="btzc-el-edit-data-pin" id="btzc-el-edit-data-pin" placeholder="PIN" />';
+    $html .= '        <input type="text" '. ($invalid ? 'class="is-invalid"' : ''). ' name="btzc-el-edit-data-username" id="btzc-el-edit-data-username" placeholder="Benutzername oder E-Mail" />';
+    $html .= '        <input type="password" '. ($invalid ? 'class="is-invalid"' : ''). ' name="btzc-el-edit-data-pin" id="btzc-el-edit-data-pin" placeholder="PIN" />';
     $html .= '        <input type="submit" class="btzc-v2-basic-button btzc-v2-standard-button" id="btzc-el-edit-data-button-login" value="Anmelden" />';
 	$html .= '        <div class="invalid-feedback" id="btzc-el-edit-data-info-no-username" hidden>Bitte geben Sie Ihren<br>Benutzernamen ein!</div>';
 	$html .= '        <a href="javascript:void(0);" id="btzc-el-edit-data-button-forgot-pin">Neuen Pin per E-Mail erhalten.</a>';

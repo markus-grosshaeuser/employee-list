@@ -135,7 +135,7 @@ class Employee extends Persistable {
 	 *
 	 * @return int The id-property of the employee.
 	 */
-	protected function get_id() {
+	public function get_id() {
 		return $this->id;
 	}
 
@@ -177,6 +177,17 @@ class Employee extends Persistable {
 
 	public function get_occupations() {
 		return $this->occupations;
+	}
+
+	public function get_ssf_pin_hash() {
+		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+		global $wpdb;
+		$sql = "SELECT pin_hash FROM " . self::$db_table . " WHERE ID = '" . $this->id . "'";
+		$result = $wpdb->get_row($sql, ARRAY_A);
+		if (!$result) {
+			return null;
+		}
+		return $result['pin_hash'];
 	}
 
 
@@ -311,8 +322,13 @@ class Employee extends Persistable {
             information VARCHAR(512),
             PRIMARY KEY (id)
         ) {$wpdb->get_charset_collate()};";
-
 		dbDelta($sql);
+
+		$column_exists = $wpdb->get_results($wpdb->prepare("SHOW COLUMNS FROM $table LIKE %s",'pin_hash'));
+
+		if (empty($column_exists)) {
+			$wpdb->query("ALTER TABLE $table ADD COLUMN pin_hash VARCHAR(255)");
+		}
 	}
 
 
@@ -498,4 +514,14 @@ class Employee extends Persistable {
 	    wp_send_json_success($employee->to_json());
     }
 
+
+	public function generate_new_ssf_pin() {
+		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+		global $wpdb;
+
+		$pin = rand(100000, 999999);
+		$hashed_pin = password_hash($pin, PASSWORD_DEFAULT);
+		$wpdb->update(self::$db_table, array('pin_hash' => $hashed_pin), array('id' => $this->id));
+		return $pin;
+	}
 }
