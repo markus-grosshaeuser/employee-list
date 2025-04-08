@@ -12,6 +12,8 @@ jQuery(function($) {
 
     let wordpressAccessCheckbox = $('#btzc-el-self-service-wordpress-account-checkbox');
     let wordpressAccesscontainer = $('#btzc-el-self-service-wordpress-account-data-container');
+    let wordpressAccessUsername = $('#btzc-el-self-service-username');
+    let wordpressAccessPassword = $('#btzc-el-self-service-password');
 
     let saveDataButton = $('#btzc-el-self-service-button-submit');
 
@@ -100,30 +102,33 @@ jQuery(function($) {
         let department = $('#btzc-el-self-service-department-selection-container').children().map(function () {
             return $(this).val();
         }).get().join(' ');
-        department = department.replace('undefined', '');
+        department = department.replace('undefined', '').trim();
         let occupation = $('#btzc-el-self-service-occupation-selection-container').children().map(function () {
             return $(this).val();
         }).get().join(' ');
-        occupation = occupation.replace('undefined', '');
+        occupation = occupation.replace('undefined', '').trim();
         let phone = $('#btzc-el-self-service-phone-number').val();
         let room = $('#btzc-el-self-service-room-number').val();
         let email = $('#btzc-el-self-service-email-address').val();
         let info = $('#btzc-el-self-service-info').val();
-        let image = $('#btzc-el-self-service-form-image').attr('src');
-        // $('<form/>', {'method': 'POST'}).append(
-        //     $('<input/>', {'type': 'hidden', 'name': 'employee_id', 'value': id}),
-        //     $('<input/>', {'type': 'hidden', 'name': 'first_name', 'value': firstName}),
-        //     $('<input/>', {'type': 'hidden', 'name': 'last_name', 'value': lastName}),
-        //     $('<input/>', {'type': 'hidden', 'name': 'room_number', 'value': room}),
-        //     $('<input/>', {'type': 'hidden', 'name': 'phone_number', 'value': phone}),
-        //     $('<input/>', {'type': 'hidden', 'name': 'email_address', 'value': email}),
-        //     $('<input/>', {'type': 'hidden', 'name': 'gender', 'value': gender}),
-        //     $('<input/>', {'type': 'hidden', 'name': 'information', 'value': info}),
-        //     $('<input/>', {'type': 'hidden', 'name': 'btzc-el-edit-save-department', 'value': department}),
-        //     $('<input/>', {'type': 'hidden', 'name': 'btzc-el-edit-save-occupation', 'value': occupation}),
-        //     $('<input/>', {'type': 'file hidden', 'name': 'image', 'value': image})
-        // ).appendTo('body').submit();
-        console.log(id, firstName, lastName, gender, department, occupation, phone, room, email, info, image);
+        let image = imageFileUpload.prop('files') != null ? imageFileUpload.prop('files'): null;
+        let wordpressUsername = wordpressAccessCheckbox.is(':checked')? wordpressAccessUsername.val(): '';
+        let wordpressPassword = wordpressAccessCheckbox.is(':checked')? wordpressAccessPassword.val(): '';
+        $('<form/>', {'method': 'POST', 'enctype': 'multipart/form-data'}).append(
+            $('<input/>', {'type': 'hidden', 'name': 'employee_id', 'value': id}),
+            $('<input/>', {'type': 'hidden', 'name': 'first_name', 'value': firstName}),
+            $('<input/>', {'type': 'hidden', 'name': 'last_name', 'value': lastName}),
+            $('<input/>', {'type': 'hidden', 'name': 'room_number', 'value': room}),
+            $('<input/>', {'type': 'hidden', 'name': 'phone_number', 'value': phone}),
+            $('<input/>', {'type': 'hidden', 'name': 'email_address', 'value': email}),
+            $('<input/>', {'type': 'hidden', 'name': 'gender', 'value': gender}),
+            $('<input/>', {'type': 'hidden', 'name': 'information', 'value': info}),
+            $('<input/>', {'type': 'hidden', 'name': 'departments', 'value': department}),
+            $('<input/>', {'type': 'hidden', 'name': 'occupations', 'value': occupation}),
+            $('<input/>', {'type': 'file', 'name': 'image', 'value': image}),
+            $('<input/>', {'type': 'hidden', 'name': 'wp_username', 'value': wordpressUsername}),
+            $('<input/>', {'type': 'hidden', 'name': 'wp_password', 'value': wordpressPassword})
+        ).appendTo('body').submit();
     })
 
 

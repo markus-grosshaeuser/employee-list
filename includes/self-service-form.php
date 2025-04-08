@@ -15,41 +15,21 @@ function self_service_form() {
     wp_enqueue_script('btz_employee_list_jquery', BTZC_EL_BASE_URL . 'public/js/jquery-3.7.1.min.js');
 	wp_enqueue_script('btz_customized_employee_list_ssf_sign_on', BTZC_EL_BASE_URL . 'public/js/employee-ssf.js');
 
-    if ($_GET['init_id'] == '99') {
+    if ($_GET['init_id'] == '99'  &&  !isset($_POST['employee_id'])) {
         return get_self_service_form_html();
     }
 
-	$employees = Employee::get_all();
-
     if (isset($_POST['btzc-el-edit-data-username']) && isset($_POST['btzc-el-edit-data-pin'])) {
-		$raw_username = sanitize_text_field($_POST['btzc-el-edit-data-username']);
-		$username_from_post = explode("@", $raw_username)[0];
-		$pin_from_post = sanitize_text_field($_POST['btzc-el-edit-data-pin']);
-        foreach ($employees as $employee) {
-			$username_from_db = explode("@", $employee->get_email_address())[0];
-	        if ($username_from_db == $username_from_post) {
-		        $pin_from_db = $employee->get_ssf_pin_hash();
-		        if ($pin_from_db != null && password_verify($pin_from_post, $pin_from_db)) {
-					return get_self_service_form_html( $employee );
-				}
-            }
-        }
-		return get_edit_data_log_in_html(true);
+	    return handle_log_in_attempt();
     }
 
 	if (isset($_POST['btzc-el-reset-pin-username'])) {
-		$raw_username = sanitize_text_field($_POST['btzc-el-reset-pin-username']);
-		$username_from_post = explode("@", $raw_username)[0];
-		foreach ($employees as $employee) {
-			$username_from_db = explode("@", $employee->get_email_address())[0];
-			if ($username_from_db == $username_from_post) {
-				$pin = $employee->generate_new_ssf_pin();
-				//TODO IMPORTANT send e-mail and remove echo-statement!!!!
-				echo "<script>alert('Ihr neuer Pin lautet: " . $pin . "');</script>";
-			}
-		}
+		handle_pin_reset_request();
 	}
 
+	if (isset($_POST['employee_id'])) {
+		handle_self_service_form_submit();
+	}
 
     return get_edit_data_log_in_html();
 }
@@ -58,7 +38,7 @@ function get_self_service_form_html($employee = null) {
     $html  = '<div id="btzc-el-self-service-form-container">';
     $html .= '<div id="btzc-el-self-service-form-main">';
     $html .= '    <div id ="btzc-el-self-service-name-row">';
-	$html .= '        <input type="hidden" class="btzc-el-ssf-textfield" id="btzc-el-self-service-employee-id" value="' . ($employee != null ? $employee->get_id() : '') . '" />';
+	$html .= '        <input type="hidden" class="btzc-el-ssf-textfield" id="btzc-el-self-service-employee-id" value="' . ($employee != null ? $employee->get_id() : '0') . '" />';
     $html .= '        <input type="text" class="btzc-el-ssf-textfield" id="btzc-el-self-service-firstname" placeholder="Vorname" value="' . ($employee != null ? $employee->get_first_name() : '') . '" />';
     $html .= '        <input type="text" class="btzc-el-ssf-textfield" id="btzc-el-self-service-lastname" placeholder="Nachname" value="'. ($employee != null ? $employee->get_last_name() : '') .'" />';
     $html .= '    </div>';
@@ -133,6 +113,80 @@ function get_self_service_form_html($employee = null) {
     return $html;
 }
 
+
+function handle_pin_reset_request() {
+	$employees = Employee::get_all();
+	$raw_username = sanitize_text_field($_POST['btzc-el-reset-pin-username']);
+	$username_from_post = explode("@", $raw_username)[0];
+	foreach ($employees as $employee) {
+		$username_from_db = explode("@", $employee->get_email_address())[0];
+		if ($username_from_db == $username_from_post) {
+			$pin = $employee->generate_new_ssf_pin();
+			//TODO IMPORTANT send e-mail and remove echo-statement!!!!
+			echo "<script>alert('Ihr neuer Pin lautet: " . $pin . "');</script>";
+		}
+	}
+}
+
+function handle_self_service_form_submit() {
+	$employee_id = sanitize_text_field($_POST['employee_id']);
+	$first_name = sanitize_text_field($_POST['first_name']);
+	$last_name = sanitize_text_field($_POST['last_name']);
+	$gender = sanitize_text_field($_POST['gender']);
+	$departments = explode(' ', $_POST['departments']);
+	$occupations = explode(' ', $_POST['occupations']);
+	$phone_number = sanitize_text_field($_POST['phone_number']);
+	$room_number = sanitize_text_field($_POST['room_number']);
+	$email_address = sanitize_text_field($_POST['email_address']);
+	$information = sanitize_text_field($_POST['information']);
+	$wordpress_username = sanitize_text_field($_POST['wp_username']);
+	$wordpress_password = sanitize_text_field($_POST['wp_password']);
+
+	$employee = new Employee($employee_id, $first_name, $last_name, $room_number, $phone_number, $email_address, null, $gender, $information);
+	$id = $employee->persist();
+
+	Employee_Department::clear_department_associations($id);
+	foreach ($departments as $department) {
+		Employee_Department::register($id, $department);
+	}
+
+	Employee_Occupation::clear_occupation_associations($id);
+	foreach ($occupations as $occupation) {
+		Employee_Occupation::register($id, $occupation);
+	}
+
+	if ($wordpress_username != null && $wordpress_password != null) {
+		$user = array(
+			'user_pass' => $wordpress_password,
+			'user_login' => $wordpress_username,
+			'user_email' => $email_address,
+			'first_name' => $first_name,
+			'last_name' => $last_name,
+			'role' => 'author'
+		);
+		wp_insert_user($user);
+		echo "<script>alert('Benutzer wurde erfolgreich angelegt.');</script>";
+	}
+}
+
+
+
+function handle_log_in_attempt() {
+	$employees = Employee::get_all();
+	$raw_username = sanitize_text_field($_POST['btzc-el-edit-data-username']);
+	$username_from_post = explode("@", $raw_username)[0];
+	$pin_from_post = sanitize_text_field($_POST['btzc-el-edit-data-pin']);
+	foreach ($employees as $employee) {
+		$username_from_db = explode("@", $employee->get_email_address())[0];
+		if ($username_from_db == $username_from_post) {
+			$pin_from_db = $employee->get_ssf_pin_hash();
+			if ($pin_from_db != null && password_verify($pin_from_post, $pin_from_db)) {
+				return get_self_service_form_html( $employee );
+			}
+		}
+	}
+	return get_edit_data_log_in_html(true);
+}
 
 
 function get_edit_data_log_in_html($invalid = false) {
