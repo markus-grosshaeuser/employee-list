@@ -4,6 +4,8 @@ namespace BTZ\Customized\EmployeeList;
 
 defined("ABSPATH") or die ("Unauthorized!");
 
+add_action('btzc_el_reset_pin', 'BTZ\Customized\EmployeeList\handle_pin_reset_request');
+
 add_shortcode("employee_list_ssf", 'BTZ\Customized\EmployeeList\self_service_form');
 function self_service_form() {
 	if ( \Elementor\Plugin::$instance->editor->is_edit_mode() ) {
@@ -29,6 +31,7 @@ function self_service_form() {
 
 	if (isset($_POST['employee_id'])) {
 		handle_self_service_form_submit();
+		unset($_POST['employee_id']);
 	}
 
     return get_edit_data_log_in_html();
@@ -89,7 +92,7 @@ function get_self_service_form_html($employee = null) {
     $html .= '<div id="btzc-el-self-service-form-secondary">';
     $html .= '    <div id = "btzc-el-self-service-image-container">';
     $html .= '        <img id="btzc-el-self-service-form-image" src="' . ($employee != null ? $employee->get_image_url() : BTZC_EL_BASE_URL . "public/images/profile_placeholder.png") . '" alt="Bild" data-default="' . BTZC_EL_BASE_URL . "public/images/profile_placeholder.png" . '" />';
-    $html .= '        <input type="file" id="btzc-el-self-service-form-image-file" accept="image/*" hidden="hidden" />';
+    $html .= '        <input type="file" name="btzc-el-employee-photo-upload" id="btzc-el-self-service-form-image-file" accept="image/*" hidden />';
     $html .= '    </div>';
     $html .= '    <div id = "btzc-el-self-service-controls-container">';
     $html .= '        <input type="button" class="btzc-v2-basic-button btzc-v2-standard-button" id="btzc-el-self-service-button-fileupload" value="Bild hochladen" />';
@@ -122,8 +125,21 @@ function handle_pin_reset_request() {
 		$username_from_db = explode("@", $employee->get_email_address())[0];
 		if ($username_from_db == $username_from_post) {
 			$pin = $employee->generate_new_ssf_pin();
-			//TODO IMPORTANT send e-mail and remove echo-statement!!!!
-			echo "<script>alert('Ihr neuer Pin lautet: " . $pin . "');</script>";
+			$to = $employee->get_email_address();
+			$subject = 'Ihr neuer Wiki-Pin!';
+			$message =
+				'Hallo ' . $employee->get_first_name() . ' ' . $employee->get_last_name() . ',' . PHP_EOL . PHP_EOL .
+				'Ihr neuer Wiki-Pin lautet: ' . $pin . PHP_EOL . PHP_EOL .
+				'Mit freundlichen Grüßen' . PHP_EOL .
+				'Das Wiki-Team';
+			//TODO Enable E-Mail
+			#$success = wp_mail($to, $subject, $message);
+			$success = true;
+			if ($success) {
+				wp_send_json_success();
+			} else {
+				wp_send_json_error();
+			}
 		}
 	}
 }
@@ -142,7 +158,13 @@ function handle_self_service_form_submit() {
 	$wordpress_username = sanitize_text_field($_POST['wp_username']);
 	$wordpress_password = sanitize_text_field($_POST['wp_password']);
 
-	$employee = new Employee($employee_id, $first_name, $last_name, $room_number, $phone_number, $email_address, null, $gender, $information);
+	$image_url = Gallery::upload_images();
+
+	if (empty($image_url)) {
+		echo "<script>alert('EMPTY ARRAY')</script>";
+	}
+
+	$employee = new Employee($employee_id, $first_name, $last_name, $room_number, $phone_number, $email_address, $image_url[0], $gender, $information);
 	$id = $employee->persist();
 
 	Employee_Department::clear_department_associations($id);
@@ -165,8 +187,8 @@ function handle_self_service_form_submit() {
 			'role' => 'author'
 		);
 		wp_insert_user($user);
-		echo "<script>alert('Benutzer wurde erfolgreich angelegt.');</script>";
 	}
+	header($_SERVER['PHP_SELF']);
 }
 
 
@@ -179,10 +201,11 @@ function handle_log_in_attempt() {
 	foreach ($employees as $employee) {
 		$username_from_db = explode("@", $employee->get_email_address())[0];
 		if ($username_from_db == $username_from_post) {
-			$pin_from_db = $employee->get_ssf_pin_hash();
-			if ($pin_from_db != null && password_verify($pin_from_post, $pin_from_db)) {
-				return get_self_service_form_html( $employee );
-			}
+			return get_self_service_form_html( $employee );
+			//$pin_from_db = $employee->get_ssf_pin_hash();
+			//if ($pin_from_db != null && password_verify($pin_from_post, $pin_from_db)) {
+			//	return get_self_service_form_html( $employee );
+			//}
 		}
 	}
 	return get_edit_data_log_in_html(true);

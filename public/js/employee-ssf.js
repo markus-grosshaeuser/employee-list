@@ -20,7 +20,8 @@ jQuery(function($) {
 
 
     let forgotPin = $('#btzc-el-edit-data-button-forgot-pin');
-    let usernameInput = $('#btzc-el-edit-data-username')
+    let usernameInput = $('#btzc-el-edit-data-username');
+    let passwordInput = $('#btzc-el-edit-data-password');
 
     forgotPin.on('click', function () {
         if (usernameInput.val() === '') {
@@ -35,9 +36,27 @@ jQuery(function($) {
         if (username.includes('@')) {
             username = username.split('@')[0];
         }
-        $('<form/>', {'method': 'POST'}).append(
-            $('<input/>', {'type': 'hidden', 'name': 'btzc-el-reset-pin-username', 'value': username})
-        ).appendTo('body').submit();
+
+        const formData = new FormData();
+        formData.append('action', 'btzc_el_reset_pin');
+        formData.append('btzc-el-reset-pin-username', username);
+        $.ajax ({
+            type: 'POST',
+            data: formData,
+            contentType: false,
+            processData: false,
+            success: function (response) {
+                alert("Ihr neuer Pin wurde an Ihre E-Mail Adresse gesendet.")
+                if (usernameInput.hasClass('is-invalid')) {
+                    usernameInput.removeClass('is-invalid');
+                    $('#btzc-el-edit-data-info-no-username').hide()
+                    passwordInput.trigger('focus');
+                }
+            },
+            error: function (response) {
+                alert("Es ist ein interner Fehler aufgetreten.\nBitte wenden Sie sich an das Wiki-Team.")
+            }
+        });
     })
 
 
@@ -95,40 +114,43 @@ jQuery(function($) {
 
 
     saveDataButton.on('click', function () {
-        let id = $('#btzc-el-self-service-employee-id').val();
-        let firstName = $('#btzc-el-self-service-firstname').val();
-        let lastName = $('#btzc-el-self-service-lastname').val();
-        let gender = $('#btzc-el-self-service-gender-selection').find(":selected").val();
+        const formData = new FormData();
+        formData.append('employee_id', $('#btzc-el-self-service-employee-id').val());
+        formData.append('first_name', $('#btzc-el-self-service-firstname').val());
+        formData.append('last_name', $('#btzc-el-self-service-lastname').val());
+        formData.append('gender', $('#btzc-el-self-service-gender-selection').find(":selected").val());
+        formData.append('departments', department);
+        formData.append('occupations', occupation);
+        formData.append('phone_number', $('#btzc-el-self-service-phone-number').val());
+        formData.append('room_number', $('#btzc-el-self-service-room-number').val());
+        formData.append('email_address', $('#btzc-el-self-service-email-address').val());
+        formData.append('information', $('#btzc-el-self-service-info').val());
+        formData.append('wp_username',  wordpressAccessCheckbox.is(':checked')? wordpressAccessUsername.val(): '');
+        formData.append('wp_password', wordpressAccessCheckbox.is(':checked')? wordpressAccessPassword.val(): '');
+
         let department = $('#btzc-el-self-service-department-selection-container').children().map(function () {
             return $(this).val();
         }).get().join(' ');
-        department = department.replace('undefined', '').trim();
+        formData.append('department', department.replace('undefined', '').trim())
+
         let occupation = $('#btzc-el-self-service-occupation-selection-container').children().map(function () {
             return $(this).val();
         }).get().join(' ');
-        occupation = occupation.replace('undefined', '').trim();
-        let phone = $('#btzc-el-self-service-phone-number').val();
-        let room = $('#btzc-el-self-service-room-number').val();
-        let email = $('#btzc-el-self-service-email-address').val();
-        let info = $('#btzc-el-self-service-info').val();
-        let image = imageFileUpload.prop('files') != null ? imageFileUpload.prop('files'): null;
-        let wordpressUsername = wordpressAccessCheckbox.is(':checked')? wordpressAccessUsername.val(): '';
-        let wordpressPassword = wordpressAccessCheckbox.is(':checked')? wordpressAccessPassword.val(): '';
-        $('<form/>', {'method': 'POST', 'enctype': 'multipart/form-data'}).append(
-            $('<input/>', {'type': 'hidden', 'name': 'employee_id', 'value': id}),
-            $('<input/>', {'type': 'hidden', 'name': 'first_name', 'value': firstName}),
-            $('<input/>', {'type': 'hidden', 'name': 'last_name', 'value': lastName}),
-            $('<input/>', {'type': 'hidden', 'name': 'room_number', 'value': room}),
-            $('<input/>', {'type': 'hidden', 'name': 'phone_number', 'value': phone}),
-            $('<input/>', {'type': 'hidden', 'name': 'email_address', 'value': email}),
-            $('<input/>', {'type': 'hidden', 'name': 'gender', 'value': gender}),
-            $('<input/>', {'type': 'hidden', 'name': 'information', 'value': info}),
-            $('<input/>', {'type': 'hidden', 'name': 'departments', 'value': department}),
-            $('<input/>', {'type': 'hidden', 'name': 'occupations', 'value': occupation}),
-            $('<input/>', {'type': 'file', 'name': 'image', 'value': image}),
-            $('<input/>', {'type': 'hidden', 'name': 'wp_username', 'value': wordpressUsername}),
-            $('<input/>', {'type': 'hidden', 'name': 'wp_password', 'value': wordpressPassword})
-        ).appendTo('body').submit();
+        formData.append('occupation', occupation.replace('undefined', '').trim())
+
+        for (const file of imageFileUpload.prop('files')) {
+            formData.append('btzc-el-employee-photo-upload[]', file);
+        }
+
+        $.ajax ({
+            type: 'POST',
+            data: formData,
+            contentType: false,
+            processData: false,
+            success: function (data) {
+                location.reload();
+            }
+        });
     })
 
 

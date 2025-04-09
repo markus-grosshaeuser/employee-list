@@ -86,6 +86,19 @@ class Gallery {
 			wp_send_json_error(['message' => 'No file uploaded.']);
 		}
 
+		$uploaded_urls = self::upload_images();
+
+		if (empty($uploaded_urls)) {
+	        wp_send_json_error(['message' => 'Keine gültigen Dateien wurden hochgeladen.']);
+        }
+		wp_send_json_success($uploaded_urls);
+	}
+
+	public static function upload_images() {
+		if (empty($_FILES['btzc-el-employee-photo-upload'])) {
+			return array();
+		}
+
 		$sub_dir = '/employee_images';
 		$upload_dir = wp_get_upload_dir();
 		$upload_path = $upload_dir['basedir'] . '/' . $sub_dir;
@@ -105,12 +118,12 @@ class Gallery {
 			}
 
 			$file = [
-	            'name'     => sanitize_file_name($uploaded_files['name'][$key]),
-	            'type'     => $uploaded_files['type'][$key],
-	            'tmp_name' => $uploaded_files['tmp_name'][$key],
-	            'error'    => $uploaded_files['error'][$key],
-	            'size'     => $uploaded_files['size'][$key],
-            ];
+				'name'     => sanitize_file_name($uploaded_files['name'][$key]),
+				'type'     => $uploaded_files['type'][$key],
+				'tmp_name' => $uploaded_files['tmp_name'][$key],
+				'error'    => $uploaded_files['error'][$key],
+				'size'     => $uploaded_files['size'][$key],
+			];
 
 			$destination = ['path' => $upload_path, 'url' => $upload_url];
 
@@ -118,13 +131,9 @@ class Gallery {
 
 			if ($upload_result && isset($upload_result['url'])) {
 				$uploaded_urls[] = $upload_result['url'];
-            }
+			}
 		}
-
-		if (empty($uploaded_urls)) {
-	        wp_send_json_error(['message' => 'Keine gültigen Dateien wurden hochgeladen.']);
-        }
-		wp_send_json_success($uploaded_urls);
+		return $uploaded_urls;
 	}
 
 	/**
