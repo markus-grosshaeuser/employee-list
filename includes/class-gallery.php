@@ -113,7 +113,7 @@ class Gallery {
 
 		foreach ($uploaded_files['name'] as $key => $value) {
 			$file_type = $uploaded_files['type'][$key];
-			if (!in_array($file_type, $allowed_file_types)) {
+			if (!in_array($file_type, $allowed_file_types)  ||  $uploaded_files['size'][$key] > 5*1024*1024) {
 				continue;
 			}
 

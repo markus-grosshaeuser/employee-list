@@ -17,11 +17,11 @@ jQuery(function($) {
 
     let saveDataButton = $('#btzc-el-self-service-button-submit');
 
-
-
     let forgotPin = $('#btzc-el-edit-data-button-forgot-pin');
     let usernameInput = $('#btzc-el-edit-data-username');
     let passwordInput = $('#btzc-el-edit-data-password');
+
+
 
     forgotPin.on('click', function () {
         if (usernameInput.val() === '') {
@@ -90,7 +90,12 @@ jQuery(function($) {
 
 
     imageFileUpload.on('change', function () {
-        image.attr('src', URL.createObjectURL(this.files[0]));
+        const filesize = this.files[0].size;
+        if (filesize < 5 * 1024 * 1024) {
+            image.attr('src', URL.createObjectURL(this.files[0]));
+        } else {
+            alert("Die Bilddatei darf eine größe von 5MB nicht übersteigen!")
+        }
     })
 
 
@@ -99,6 +104,7 @@ jQuery(function($) {
             console.log("Not yet implemented!")
             //TODO implement secret template placeholder selection
         } else {
+            imageFileUpload.val(null)
             image.attr('src', placeholderImageUrl);
         }
     })
@@ -115,15 +121,14 @@ jQuery(function($) {
 
     saveDataButton.on('click', function () {
         const formData = new FormData();
+        formData.append('action', 'btzc_el_persist_data');
         formData.append('employee_id', $('#btzc-el-self-service-employee-id').val());
         formData.append('first_name', $('#btzc-el-self-service-firstname').val());
         formData.append('last_name', $('#btzc-el-self-service-lastname').val());
         formData.append('gender', $('#btzc-el-self-service-gender-selection').find(":selected").val());
-        formData.append('departments', department);
-        formData.append('occupations', occupation);
         formData.append('phone_number', $('#btzc-el-self-service-phone-number').val());
         formData.append('room_number', $('#btzc-el-self-service-room-number').val());
-        formData.append('email_address', $('#btzc-el-self-service-email-address').val());
+        formData.append('email_address', $('#btzc-el-self-service-email-address').val().toLowerCase());
         formData.append('information', $('#btzc-el-self-service-info').val());
         formData.append('wp_username',  wordpressAccessCheckbox.is(':checked')? wordpressAccessUsername.val(): '');
         formData.append('wp_password', wordpressAccessCheckbox.is(':checked')? wordpressAccessPassword.val(): '');
@@ -131,15 +136,17 @@ jQuery(function($) {
         let department = $('#btzc-el-self-service-department-selection-container').children().map(function () {
             return $(this).val();
         }).get().join(' ');
-        formData.append('department', department.replace('undefined', '').trim())
+        formData.append('departments', department.replace('undefined', '').trim())
 
         let occupation = $('#btzc-el-self-service-occupation-selection-container').children().map(function () {
             return $(this).val();
         }).get().join(' ');
-        formData.append('occupation', occupation.replace('undefined', '').trim())
+        formData.append('occupations', occupation.replace('undefined', '').trim())
 
-        for (const file of imageFileUpload.prop('files')) {
-            formData.append('btzc-el-employee-photo-upload[]', file);
+        if (imageFileUpload.val()) {
+            for (const file of imageFileUpload.prop('files')) {
+                formData.append('btzc-el-employee-photo-upload[]', file);
+            }
         }
 
         $.ajax ({
@@ -147,8 +154,12 @@ jQuery(function($) {
             data: formData,
             contentType: false,
             processData: false,
-            success: function (data) {
-                location.reload();
+            success: function (response) {
+                alert('Ihre Daten wurden erfolgreich gespeichert.')
+                const url = window.location.pathname;
+                const args = new URLSearchParams(window.location.search);
+                args.delete('init_id')
+                window.location.href = url + '?' + args.toString();
             }
         });
     })
@@ -160,7 +171,7 @@ jQuery(function($) {
         let email = $(this).val();
         let wordpressUsername = $('#btzc-el-self-service-username')
         if (email.includes('@')) {
-            wordpressUsername.val(email.split('@')[0]);
+            wordpressUsername.val(email.split('@')[0].toLowerCase());
         } else {
             wordpressUsername.val('');
         }

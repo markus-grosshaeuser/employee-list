@@ -5,9 +5,10 @@ namespace BTZ\Customized\EmployeeList;
 defined("ABSPATH") or die ("Unauthorized!");
 
 add_action('btzc_el_reset_pin', 'BTZ\Customized\EmployeeList\handle_pin_reset_request');
+add_action('btzc_el_persist_data', 'BTZ\Customized\EmployeeList\handle_self_service_form_submit');
 
 add_shortcode("employee_list_ssf", 'BTZ\Customized\EmployeeList\self_service_form');
-function self_service_form() {
+function self_service_form($attributes) {
 	if ( \Elementor\Plugin::$instance->editor->is_edit_mode() ) {
 		return 'Employee-List Self-Service-Form won\'t render correctly in Elementor Edit Mode. Please switch to Preview Mode.';
 	}
@@ -17,7 +18,10 @@ function self_service_form() {
     wp_enqueue_script('btz_employee_list_jquery', BTZC_EL_BASE_URL . 'public/js/jquery-3.7.1.min.js');
 	wp_enqueue_script('btz_customized_employee_list_ssf_sign_on', BTZC_EL_BASE_URL . 'public/js/employee-ssf.js');
 
-    if ($_GET['init_id'] == '99'  &&  !isset($_POST['employee_id'])) {
+
+    $attributes = shortcode_atts(array('init_id' => 1234), $attributes, 'employee_list');
+
+    if ($_GET['init_id'] == $attributes['init_id']  &&  !isset($_POST['employee_id'])) {
         return get_self_service_form_html();
     }
 
@@ -100,16 +104,18 @@ function get_self_service_form_html($employee = null) {
     $html .= '    </div>';
     $html .= '</div>';
     $html .= '</div>';
-	$html .= '<div id="btzc-el-self-service-wordpress-account-container">';
-	$html .= '	<div id="btzc-el-self-service-wordpress-account-request-container">';
-	$html .= '		<input type="checkbox" id="btzc-el-self-service-wordpress-account-checkbox" />';
-	$html .= '		<label for="btzc-el-self-service-wordpress-account-checkbox">Ja, ich möchte Zugangsdaten für das BTZ-Wiki um eigenen Beiträge veröffentlichen zu können.</label>';
-	$html .= '	</div>';
-	$html .= '	<div id="btzc-el-self-service-wordpress-account-data-container">';
-	$html .= '        <input type="text" id="btzc-el-self-service-username" readonly placeholder="Benutzername" value="' . ($employee != null ? explode("@", $employee->get_email_address())[0] : '') . '" />';
-	$html .= '        <input type="password" id="btzc-el-self-service-password" placeholder="Passwort" />';
-	$html .= '	</div>';
-	$html .= '</div>';
+	if ($employee == null   ||   ! username_exists(explode( "@", $employee->get_email_address() )[0])) {
+		$html .= '<div id="btzc-el-self-service-wordpress-account-container">';
+		$html .= '	<div id="btzc-el-self-service-wordpress-account-request-container">';
+		$html .= '		<input type="checkbox" id="btzc-el-self-service-wordpress-account-checkbox" />';
+		$html .= '		<label for="btzc-el-self-service-wordpress-account-checkbox">Ja, ich möchte Zugangsdaten für das BTZ-Wiki um eigenen Beiträge veröffentlichen zu können.</label>';
+		$html .= '	</div>';
+		$html .= '	<div id="btzc-el-self-service-wordpress-account-data-container">';
+		$html .= '        <input type="text" id="btzc-el-self-service-username" readonly placeholder="Benutzername" value="' . ( $employee != null ? explode( "@", $employee->get_email_address() )[0] : '' ) . '" />';
+		$html .= '        <input type="password" id="btzc-el-self-service-password" placeholder="Passwort" />';
+		$html .= '	</div>';
+		$html .= '</div>';
+	}
 	$html .= '<div id="btzc-el-self-service-form-submit-container">';
 	$html .= '	<input type="button" class="btzc-v2-basic-button btzc-v2-standard-button" id="btzc-el-self-service-button-submit" value="Daten speichern" />';
 	$html .= '</div>';
@@ -123,18 +129,8 @@ function handle_pin_reset_request() {
 	$username_from_post = explode("@", $raw_username)[0];
 	foreach ($employees as $employee) {
 		$username_from_db = explode("@", $employee->get_email_address())[0];
-		if ($username_from_db == $username_from_post) {
-			$pin = $employee->generate_new_ssf_pin();
-			$to = $employee->get_email_address();
-			$subject = 'Ihr neuer Wiki-Pin!';
-			$message =
-				'Hallo ' . $employee->get_first_name() . ' ' . $employee->get_last_name() . ',' . PHP_EOL . PHP_EOL .
-				'Ihr neuer Wiki-Pin lautet: ' . $pin . PHP_EOL . PHP_EOL .
-				'Mit freundlichen Grüßen' . PHP_EOL .
-				'Das Wiki-Team';
-			//TODO Enable E-Mail
-			#$success = wp_mail($to, $subject, $message);
-			$success = true;
+		if (strtolower($username_from_db) == strtolower($username_from_post)) {
+			$success = send_pin_email($employee->get_first_name(), $employee->get_last_name(), $employee->get_email_address(), $employee->generate_new_ssf_pin());
 			if ($success) {
 				wp_send_json_success();
 			} else {
@@ -143,6 +139,7 @@ function handle_pin_reset_request() {
 		}
 	}
 }
+
 
 function handle_self_service_form_submit() {
 	$employee_id = sanitize_text_field($_POST['employee_id']);
@@ -159,9 +156,14 @@ function handle_self_service_form_submit() {
 	$wordpress_password = sanitize_text_field($_POST['wp_password']);
 
 	$image_url = Gallery::upload_images();
-
 	if (empty($image_url)) {
-		echo "<script>alert('EMPTY ARRAY')</script>";
+		if (Employee::get_by_id($employee_id)) {
+			$image_url = array(Employee::get_by_id($employee_id)->get_image_url());
+		} else {
+			$upload_dir = wp_get_upload_dir();
+			$upload_url = $upload_dir['baseurl'] . '/employee_images';
+			$image_url = array( $upload_url . '/profile_placeholder.png' );
+		}
 	}
 
 	$employee = new Employee($employee_id, $first_name, $last_name, $room_number, $phone_number, $email_address, $image_url[0], $gender, $information);
@@ -188,7 +190,18 @@ function handle_self_service_form_submit() {
 		);
 		wp_insert_user($user);
 	}
-	header($_SERVER['PHP_SELF']);
+
+	if ($employee_id == $id) {
+		wp_send_json_success();
+	} else {
+		$pin = Employee::get_by_id( $id )->generate_new_ssf_pin();
+		$success = send_pin_email($first_name, $last_name, $email_address, $pin);
+		if ($success) {
+			wp_send_json_success();
+		} else {
+			wp_send_json_error();
+		}
+	}
 }
 
 
@@ -200,7 +213,8 @@ function handle_log_in_attempt() {
 	$pin_from_post = sanitize_text_field($_POST['btzc-el-edit-data-pin']);
 	foreach ($employees as $employee) {
 		$username_from_db = explode("@", $employee->get_email_address())[0];
-		if ($username_from_db == $username_from_post) {
+		if (strtolower($username_from_db) == strtolower($username_from_post)) {
+			//TODO Enable Pin-Check !!!
 			return get_self_service_form_html( $employee );
 			//$pin_from_db = $employee->get_ssf_pin_hash();
 			//if ($pin_from_db != null && password_verify($pin_from_post, $pin_from_db)) {
@@ -293,4 +307,17 @@ function getOccupationSelectElement($selected = Array()) {
 	    $html .= '</select>';
     }
     return $html;
+}
+
+
+function send_pin_email($first_name, $last_name, $recipient, $pin) {
+	$subject = 'Ihr neuer Wiki-Pin!';
+	$message =
+		'Hallo ' . $first_name. ' ' . $last_name . ',' . PHP_EOL . PHP_EOL .
+		'Ihr neuer Wiki-Pin lautet: ' . $pin . PHP_EOL . PHP_EOL .
+		'Mit freundlichen Grüßen' . PHP_EOL .
+		'Das Wiki-Team';
+	//TODO Enable E-Mail
+	//return wp_mail($recipient, $subject, $message);
+	return true;
 }
