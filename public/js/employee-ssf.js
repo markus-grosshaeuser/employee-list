@@ -1,5 +1,5 @@
 jQuery(function($) {
-
+    const emailRegex = /^([a-zA-Z0-9_.\-+])+@(([a-zA-Z0-9\-])+\.)+([a-zA-Z0-9]{2,4})+$/;
 
     let image = $('#btzc-el-self-service-form-image');
     let imageFileUpload = $('#btzc-el-self-service-form-image-file');
@@ -11,7 +11,7 @@ jQuery(function($) {
     let occupationContainer = $('#btzc-el-self-service-occupation-selection-container');
 
     let wordpressAccessCheckbox = $('#btzc-el-self-service-wordpress-account-checkbox');
-    let wordpressAccesscontainer = $('#btzc-el-self-service-wordpress-account-data-container');
+    let wordpressAccessContainer = $('#btzc-el-self-service-wordpress-account-data-container');
     let wordpressAccessUsername = $('#btzc-el-self-service-username');
     let wordpressAccessPassword = $('#btzc-el-self-service-password');
 
@@ -45,7 +45,7 @@ jQuery(function($) {
             data: formData,
             contentType: false,
             processData: false,
-            success: function (response) {
+            success: function () {
                 alert("Ihr neuer Pin wurde an Ihre E-Mail Adresse gesendet.")
                 if (usernameInput.hasClass('is-invalid')) {
                     usernameInput.removeClass('is-invalid');
@@ -53,7 +53,7 @@ jQuery(function($) {
                     passwordInput.trigger('focus');
                 }
             },
-            error: function (response) {
+            error: function () {
                 alert("Es ist ein interner Fehler aufgetreten.\nBitte wenden Sie sich an das Wiki-Team.")
             }
         });
@@ -64,7 +64,7 @@ jQuery(function($) {
 
 
 
-    wordpressAccesscontainer.slideUp(0);
+    wordpressAccessContainer.slideUp(0);
 
     departmentContainer.on('input', '.btzc-el-self-service-department-selection-element', function () {
         if (this === departmentContainer.children().last().get(0)) {
@@ -95,6 +95,7 @@ jQuery(function($) {
             image.attr('src', URL.createObjectURL(this.files[0]));
         } else {
             alert("Die Bilddatei darf eine größe von 5MB nicht übersteigen!")
+            this.val(null)
         }
     })
 
@@ -111,24 +112,50 @@ jQuery(function($) {
 
     wordpressAccessCheckbox.on('change', function () {
         if (wordpressAccessCheckbox.is(':checked')) {
-            wordpressAccesscontainer.slideDown(500);
+            wordpressAccessContainer.slideDown(500);
             $('#btzc-el-self-service-password').trigger('focus');
         } else {
-            wordpressAccesscontainer.slideUp(500);
+            wordpressAccessContainer.slideUp(500);
         }
     })
 
 
     saveDataButton.on('click', function () {
+        let firstName = $('#btzc-el-self-service-firstname');
+        let lastName = $('#btzc-el-self-service-lastname');
+        let email = $('#btzc-el-self-service-email-address');
+
+        let validEmail  = emailRegex.test(email.val().toLowerCase());
+
+        if (firstName.val() === '' ||  lastName.val() === ''  ||  !validEmail) {
+            if (firstName.val() === '') {
+                firstName.addClass('is-invalid')
+            } else {
+                firstName.removeClass('is-invalid');
+            }
+            if (lastName.val() === '') {
+                lastName.addClass('is-invalid')
+            }
+            else {
+                lastName.removeClass('is-invalid');
+            }
+            if (!validEmail) {
+                email.addClass('is-invalid');
+            } else {
+                email.removeClass('is-invalid');
+            }
+            return
+        }
+
         const formData = new FormData();
         formData.append('action', 'btzc_el_persist_data');
         formData.append('employee_id', $('#btzc-el-self-service-employee-id').val());
-        formData.append('first_name', $('#btzc-el-self-service-firstname').val());
-        formData.append('last_name', $('#btzc-el-self-service-lastname').val());
+        formData.append('first_name', firstName.val());
+        formData.append('last_name', lastName.val());
         formData.append('gender', $('#btzc-el-self-service-gender-selection').find(":selected").val());
         formData.append('phone_number', $('#btzc-el-self-service-phone-number').val());
         formData.append('room_number', $('#btzc-el-self-service-room-number').val());
-        formData.append('email_address', $('#btzc-el-self-service-email-address').val().toLowerCase());
+        formData.append('email_address', email.val().toLowerCase());
         formData.append('information', $('#btzc-el-self-service-info').val());
         formData.append('wp_username',  wordpressAccessCheckbox.is(':checked')? wordpressAccessUsername.val(): '');
         formData.append('wp_password', wordpressAccessCheckbox.is(':checked')? wordpressAccessPassword.val(): '');
@@ -154,7 +181,7 @@ jQuery(function($) {
             data: formData,
             contentType: false,
             processData: false,
-            success: function (response) {
+            success: function () {
                 alert('Ihre Daten wurden erfolgreich gespeichert.')
                 const url = window.location.pathname;
                 const args = new URLSearchParams(window.location.search);

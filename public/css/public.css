@@ -309,7 +309,7 @@
 ************************************************/
 
 .is-invalid {
-	border: 4px solid var(--btzc-v2-alert-button-active-color) !important;
+	background-color: var(--btzc-v2-alert-button-active-bg) !important;
 }
 
 .invalid-feedback {

@@ -2,7 +2,7 @@
 /**
  * Public-Display: Shortcode
  *
- * This file adds the shortcode to insert an employee-list anywhere where a shortcode can the placed.
+ * This file adds the shortcode to insert an employee-list anywhere where a shortcode can be placed.
  *
  * @package BTZ\Customized
  * @subpackages EmployeeList

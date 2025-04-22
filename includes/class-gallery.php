@@ -13,7 +13,7 @@
 
 namespace BTZ\Customized\EmployeeList;
 
-# This file is only accessible from the WordPress-backend.
+# This file is only accessible from the WordPress backend.
 defined('ABSPATH') or die('Unauthorized!');
 
 class Gallery {
@@ -53,7 +53,7 @@ class Gallery {
 	 *
 	 * @param string $image_url The URL of the image to be deleted.
 	 *
-	 * @return void Sends a JSON response indicating success or failure of the file deletion.
+	 * @return void Sends a JSON response indicating the success or failure of the file deletion.
 	 *
 	 * @since 2.0.0
 	 */
@@ -94,7 +94,7 @@ class Gallery {
 		wp_send_json_success($uploaded_urls);
 	}
 
-	public static function upload_images() {
+	public static function upload_images($first_name = "", $last_name = "") {
 		if (empty($_FILES['btzc-el-employee-photo-upload'])) {
 			return array();
 		}
@@ -117,8 +117,15 @@ class Gallery {
 				continue;
 			}
 
+			$file_name = sanitize_file_name($uploaded_files['name'][$key]);
+			if ($first_name != "" && $last_name != "" ) {
+				$file_name_components = explode(".", $file_name);
+				$extension = end($file_name_components);
+				$file_name = strtolower($last_name . "-" . $first_name . "." . $extension);
+			}
+
 			$file = [
-				'name'     => sanitize_file_name($uploaded_files['name'][$key]),
+				'name'     => $file_name,
 				'type'     => $uploaded_files['type'][$key],
 				'tmp_name' => $uploaded_files['tmp_name'][$key],
 				'error'    => $uploaded_files['error'][$key],

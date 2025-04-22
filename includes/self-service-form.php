@@ -108,7 +108,7 @@ function get_self_service_form_html($employee = null) {
 		$html .= '<div id="btzc-el-self-service-wordpress-account-container">';
 		$html .= '	<div id="btzc-el-self-service-wordpress-account-request-container">';
 		$html .= '		<input type="checkbox" id="btzc-el-self-service-wordpress-account-checkbox" />';
-		$html .= '		<label for="btzc-el-self-service-wordpress-account-checkbox">Ja, ich möchte Zugangsdaten für das BTZ-Wiki um eigenen Beiträge veröffentlichen zu können.</label>';
+		$html .= '		<label for="btzc-el-self-service-wordpress-account-checkbox">Ja, ich möchte Zugangsdaten für das BTZ-Wiki um eigene Beiträge veröffentlichen zu können.</label>';
 		$html .= '	</div>';
 		$html .= '	<div id="btzc-el-self-service-wordpress-account-data-container">';
 		$html .= '        <input type="text" id="btzc-el-self-service-username" readonly placeholder="Benutzername" value="' . ( $employee != null ? explode( "@", $employee->get_email_address() )[0] : '' ) . '" />';
@@ -155,7 +155,7 @@ function handle_self_service_form_submit() {
 	$wordpress_username = sanitize_text_field($_POST['wp_username']);
 	$wordpress_password = sanitize_text_field($_POST['wp_password']);
 
-	$image_url = Gallery::upload_images();
+	$image_url = Gallery::upload_images($first_name, $last_name);
 	if (empty($image_url)) {
 		if (Employee::get_by_id($employee_id)) {
 			$image_url = array(Employee::get_by_id($employee_id)->get_image_url());
