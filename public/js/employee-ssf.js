@@ -1,4 +1,10 @@
-jQuery(function($) {
+jQuery(/**
+ * Initializes and manages various interactions and functionality for a self-service form, including department/occupation management,
+ * image upload, backend data persistence, and other form-related features.
+
+ * @param {jQuery} $ - A reference to the jQuery object for DOM manipulation and event handling.
+ */
+function($) {
     const emailRegex = /^([a-zA-Z0-9_.\-+])+@(([a-zA-Z0-9\-])+\.)+([a-zA-Z0-9]{2,4})+$/;
 
     let image = $('#btzc-el-self-service-form-image');
@@ -22,7 +28,9 @@ jQuery(function($) {
     let passwordInput = $('#btzc-el-edit-data-password');
 
 
-
+    /**
+     * Sends a request to the backend to reset the user's PIN.'
+     */
     forgotPin.on('click', function () {
         if (usernameInput.val() === '') {
             if (! usernameInput.hasClass('is-invalid')) {
@@ -66,6 +74,10 @@ jQuery(function($) {
 
     wordpressAccessContainer.slideUp(0);
 
+
+    /**
+     * Adds a new department selection element when the user clicks the "+" button.
+     */
     departmentContainer.on('input', '.btzc-el-self-service-department-selection-element', function () {
         if (this === departmentContainer.children().last().get(0)) {
             departmentContainer.append(departmentContainer.children().last().clone())
@@ -75,6 +87,9 @@ jQuery(function($) {
     })
 
 
+    /**
+     * Adds a new occupation selection element when the user clicks the "+" button.
+     */
     occupationContainer.on('input', '.btzc-el-self-service-occupation-selection-element', function () {
         if (this === occupationContainer.children().last().get(0)) {
             occupationContainer.append(occupationContainer.children().last().clone())
@@ -84,11 +99,17 @@ jQuery(function($) {
     })
 
 
+    /**
+     * Opens the file upload dialog when the user clicks the upload button.
+     */
     imageUploadButton.on('click', function () {
         imageFileUpload.trigger('click');
     })
 
 
+    /**
+     * Uploads the selected file to the server and displays it in the image element.
+     */
     imageFileUpload.on('change', function () {
         const filesize = this.files[0].size;
         if (filesize < 5 * 1024 * 1024) {
@@ -100,16 +121,18 @@ jQuery(function($) {
     })
 
 
+    /**
+     * Resets the image element to the default placeholder image.
+     */
     imageTemplateButton.on('click', function (e) {
-        if (e.ctrlKey && e.shiftKey) {
-            console.log("Not yet implemented!")
-            //TODO implement secret template placeholder selection
-        } else {
-            imageFileUpload.val(null)
-            image.attr('src', placeholderImageUrl);
-        }
+         imageFileUpload.val(null)
+        image.attr('src', placeholderImageUrl);
     })
 
+
+    /**
+     * Shows or hides the wordpress access data container when the checkbox is toggled.
+     */
     wordpressAccessCheckbox.on('change', function () {
         if (wordpressAccessCheckbox.is(':checked')) {
             wordpressAccessContainer.slideDown(500);
@@ -120,6 +143,9 @@ jQuery(function($) {
     })
 
 
+    /**
+     * Sends a request to the backend to save the provided data.
+     */
     saveDataButton.on('click', function () {
         let firstName = $('#btzc-el-self-service-firstname');
         let lastName = $('#btzc-el-self-service-lastname');
@@ -192,8 +218,9 @@ jQuery(function($) {
     })
 
 
-
-
+    /**
+     * Updates the wordpress username field based on the provided email address.
+     */
     $('#btzc-el-self-service-email-address').on('input', function () {
         let email = $(this).val();
         let wordpressUsername = $('#btzc-el-self-service-username')

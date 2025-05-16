@@ -8,6 +8,14 @@ add_action('btzc_el_reset_pin', 'BTZ\Customized\EmployeeList\handle_pin_reset_re
 add_action('btzc_el_persist_data', 'BTZ\Customized\EmployeeList\handle_self_service_form_submit');
 
 add_shortcode("employee_list_ssf", 'BTZ\Customized\EmployeeList\self_service_form');
+
+/**
+ * Generates and processes the Employee-Self-Service form based on input attributes and user interactions.
+ *
+ * @param array $attributes An array of attributes passed to the shortcode, including 'init_id'.
+ *
+ * @return string The HTML content of the self-service form or a related message, determined by the request context.
+ */
 function self_service_form($attributes) {
 	if ( \Elementor\Plugin::$instance->editor->is_edit_mode() ) {
 		return 'Employee-List Self-Service-Form won\'t render correctly in Elementor Edit Mode. Please switch to Preview Mode.';
@@ -41,6 +49,15 @@ function self_service_form($attributes) {
     return get_edit_data_log_in_html();
 }
 
+
+/**
+ * Generates the HTML markup for the Employee-Self-Service form.
+ *
+ * @param object|null $employee An optional employee object containing pre-filled data for the form fields.
+ * If null, the form will be generated with default or empty values.
+ *
+ * @return string The HTML content for the self-service form, including input fields, dropdowns, and controls.
+ */
 function get_self_service_form_html($employee = null) {
     $html  = '<div id="btzc-el-self-service-form-container">';
     $html .= '<div id="btzc-el-self-service-form-main">';
@@ -123,6 +140,13 @@ function get_self_service_form_html($employee = null) {
 }
 
 
+
+/**
+ * Handles a PIN reset request by validating a submitted username, matching it with existing employee records,
+ * generating a new PIN, and sending an email with the new PIN to the employee.
+ *
+ * @return void Outputs a JSON response indicating success or failure of the PIN reset process.
+ */
 function handle_pin_reset_request() {
 	$employees = Employee::get_all();
 	$raw_username = sanitize_text_field($_POST['btzc-el-reset-pin-username']);
@@ -141,6 +165,14 @@ function handle_pin_reset_request() {
 }
 
 
+/**
+ * Processes the submission of the Employee Self-Service form by handling and saving
+ * employee details, including personal information, department and occupation associations,
+ * and optional WordPress user account creation.
+ *
+ * @return void This function does not return a value. It sends a JSON response indicating success or failure
+ *              based on the processing and operations performed.
+ */
 function handle_self_service_form_submit() {
 	$employee_id = sanitize_text_field($_POST['employee_id']);
 	$first_name = sanitize_text_field($_POST['first_name']);
@@ -206,6 +238,14 @@ function handle_self_service_form_submit() {
 
 
 
+/**
+ * Handles the login attempt for the Employee-Self-Service form.
+ * Validates user credentials by comparing submitted username and PIN
+ * against stored employee data and hashes.
+ *
+ * @return string The HTML content for the self-service form upon successful login,
+ *                or the login form with an error message upon failure.
+ */
 function handle_log_in_attempt() {
 	$employees = Employee::get_all();
 	$raw_username = sanitize_text_field($_POST['btzc-el-edit-data-username']);
@@ -214,18 +254,25 @@ function handle_log_in_attempt() {
 	foreach ($employees as $employee) {
 		$username_from_db = explode("@", $employee->get_email_address())[0];
 		if (strtolower($username_from_db) == strtolower($username_from_post)) {
-			//TODO Enable Pin-Check !!!
-			return get_self_service_form_html( $employee );
-			//$pin_from_db = $employee->get_ssf_pin_hash();
-			//if ($pin_from_db != null && password_verify($pin_from_post, $pin_from_db)) {
-			//	return get_self_service_form_html( $employee );
-			//}
+
+			$pin_from_db = $employee->get_ssf_pin_hash();
+			if ($pin_from_db != null && password_verify($pin_from_post, $pin_from_db)) {
+				return get_self_service_form_html( $employee );
+			}
 		}
 	}
 	return get_edit_data_log_in_html(true);
 }
 
 
+/**
+ * Generates the HTML content for the login form used in the Edit Data section.
+ *
+ * @param bool $invalid Optional parameter to indicate whether the form should display validation errors.
+ *        Defaults to false.
+ *
+ * @return string The generated HTML content of the login form.
+ */
 function get_edit_data_log_in_html($invalid = false) {
 	$html  = '<form method="POST">';
 	$html .= '	<div id="btzc-el-edit-data-form-login-container">';
@@ -242,6 +289,14 @@ function get_edit_data_log_in_html($invalid = false) {
 }
 
 
+/**
+ * Generates an HTML select element for department selection, optionally including pre-selected departments.
+ *
+ * @param array $selected An array of pre-selected department objects. Each object should have methods get_id() and get_department().
+ *                        If empty, the returned HTML includes a single dropdown with all departments.
+ *
+ * @return string The HTML markup for one or more department selection elements.
+ */
 function getDepartmentSelectElement($selected = Array()) {
     $departments = Department::get_all();
     $html = '';
@@ -276,6 +331,13 @@ function getDepartmentSelectElement($selected = Array()) {
 }
 
 
+/**
+ * Generates HTML select elements for occupation selection, with optional pre-selected values.
+ *
+ * @param array $selected An array of selected occupation objects. If empty, generates a single select element without pre-selected values.
+ *
+ * @return string The HTML markup for one or more occupation selection dropdowns.
+ */
 function getOccupationSelectElement($selected = Array()) {
     $occupations = Occupation::get_all();
     $html = '';
@@ -310,6 +372,16 @@ function getOccupationSelectElement($selected = Array()) {
 }
 
 
+/**
+ * Sends an email containing a PIN to the specified recipient.
+ *
+ * @param string $first_name The first name of the recipient.
+ * @param string $last_name The last name of the recipient.
+ * @param string $recipient The email address of the recipient.
+ * @param string $pin The PIN to be sent in the email.
+ *
+ * @return bool True if the email was sent successfully, false otherwise.
+ */
 function send_pin_email($first_name, $last_name, $recipient, $pin) {
 	$subject = 'Ihr neuer Wiki-Pin!';
 	$message =
@@ -317,7 +389,5 @@ function send_pin_email($first_name, $last_name, $recipient, $pin) {
 		'Ihr neuer Wiki-Pin lautet: ' . $pin . PHP_EOL . PHP_EOL .
 		'Mit freundlichen Grüßen' . PHP_EOL .
 		'Das Wiki-Team';
-	//TODO Enable E-Mail
-	//return wp_mail($recipient, $subject, $message);
-	return true;
+	return wp_mail($recipient, $subject, $message);
 }
